@@ -4,11 +4,10 @@
 
 {{ $darkMode := or (not $isXServer) (promptBoolOnce . "darkMode" "Use dark mode" false) -}}
 
-{{ $gpgEmail := "44341687+ernieIzde8ski@users.noreply.github.com" -}}
-{{ $gpgEmail := promptStringOnce . "gpgEmail" "GPG email" $gpgEmail -}}
+{{ $gitEmail := "44341687+ernieIzde8ski@users.noreply.github.com" -}}
+{{ $gitEmail := promptStringOnce . "gitEmail" "Git email" $gitEmail }}
 
-{{ $gpgSigningKey := "5C9DBF62D9602C233202F06A24E767FED21795D5" -}}
-{{ $gpgSigningKey := promptStringOnce . "gpgSigningKey" "GPG signing key" $gpgSigningKey -}}
+{{ $gpgSigningKey := promptStringOnce . "gpgSigningKey" "GPG signing key" "" -}}
 
 {{ $passphrase := promptStringOnce . "encryptionPassphrase" "Encryption passphrase" }}
 {{ $passphrase := $passphrase | quote }}
@@ -36,7 +35,11 @@ gpg:
 data:
   darkMode: {{ $darkMode }}
   encryptionPassphrase: {{ $passphrase }}
-  gpgEmail: {{ $gpgEmail | quote }}
-  gpgSigningKey: {{ $gpgSigningKey | quote }}
+  gitEmail: {{ $gitEmail | quote }}
+  gpgSigningKey: {{ if $gpgSigningKey -}}
+    {{$gpgSigningKey | quote -}}
+  {{ else -}}
+    null
+  {{ end -}}
   isWork: {{ $isWork }}
   isXServer: {{ $isXServer }}

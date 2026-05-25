@@ -1,7 +1,9 @@
 [user]
     name       = Ernie Izdebski
-    email      = {{ .gpgEmail | quote }}
+    email      = {{ .gitEmail | quote }}
+    {{- if .gpgSigningKey }}
     signingKey = {{ .gpgSigningKey | quote }}
+    {{- end }}
 
 [advice]
     skippedCherryPicks = false
@@ -33,7 +35,7 @@
 
 [commit]
     cleanup     = "strip"
-    gpgSign     = true
+    gpgSign     = {{ not (not .gpgSigningKey) }}
 
 [core]
     autocrlf    = false
@@ -82,7 +84,7 @@
     showStash           = true
     showUntrackedFiles  = normal
 
-{{ if lookPath "gh" -}}
+{{- if lookPath "gh" }}
 
 [credential "https://github.com"]
     helper =
@@ -92,4 +94,4 @@
     helper =
     helper = !/usr/bin/gh auth git-credential
 
-{{ end -}}
+{{- end }}
