@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-
+export DO_NOT_TRACK=true # github CLI
 export XBPS_DISTDIR="$HOME/.local/state/xbps-packages"
 
 if [[ -o interactive ]]; then
