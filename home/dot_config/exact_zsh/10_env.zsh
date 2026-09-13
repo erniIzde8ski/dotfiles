@@ -21,6 +21,9 @@ for editor in $editors; do
     fi
 done
 
+if linker="$(command -v mold 2>/dev/null)"; then
+    export LD="$linker"
+fi
 
 ZSH_CACHE_HOME="${ZSH_CACHE_HOME:-$XDG_CACHE_HOME/zsh}"
 [[ -d "$ZSH_CACHE_HOME" ]] || mkdir -p "$ZSH_CACHE_HOME"
