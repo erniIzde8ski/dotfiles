@@ -1,0 +1,270 @@
+#!/usr/bin/env -S uv run --script
+# vim: filetype=python
+# /// script
+# requires-python = ">=3.15"
+# dependencies = [
+#     "ast-comments>=1.3.0",
+#     "cyclopts>=5.4.0",
+#     "evilutils>=0.2.0",
+#     "pydantic>=2.14.3",
+# ]
+# ///
+
+# pyright: reportImplicitStringConcatenation = false
+
+
+from __future__ import annotations
+
+import re
+import subprocess
+from collections import defaultdict
+from collections.abc import Generator, Sequence
+from itertools import chain
+from pathlib import Path
+from shutil import rmtree
+from typing import ClassVar, Literal, NewType, cast, overload
+
+import ast_comments as AST  # pyright: ignore[reportMissingTypeStubs]
+import rich.pretty
+from ast_comments import Constant, Expr  # pyright: ignore[reportMissingTypeStubs]
+from cyclopts import App
+from evildatetime import TimeDelta
+from evilfunctools import cache, compose, immediate, partial
+from pydantic import BaseModel, ConfigDict
+from pydantic.alias_generators import to_camel
+from rich.console import Console
+
+prettify = partial(rich.pretty.pretty_repr, max_depth=10, max_width=120, expand_all=True)
+
+console = Console()
+print = console.print
+
+
+PYRIGHT_COMMAND = ("uvx", "basedpyright")
+
+
+ModuleName = NewType("ModuleName", str)
+ImportObject = NewType("ImportObject", str)
+
+_Base = dict[ModuleName, set[ImportObject]]
+Imports = dict[ImportObject, ModuleName]
+
+
+@cache
+@compose(reversed)
+@compose(tuple)
+def get_submodules(module: ModuleName) -> Generator[ModuleName]:
+    sep = "."
+    parts = module.split(sep)
+    for i in range(len(parts)):
+        yield ModuleName(sep.join(parts[: i + 1]))
+
+
+@immediate
+def _KNOWN_IMPORTS():
+    base: _Base = cast(
+        _Base,
+        {
+            "_typeshed": {"Incomplete"},
+            "collections": {"defaultdict"},
+            "collections.abc": {"Sequence", "Generator", "Iterator"},
+            "configparser": {"ConfigParser"},
+            "importlib.metadata": {"EntryPoints"},
+            "os": {"stat_result"},
+            "types": {"ModuleType"},
+            "typing": {"Any", "TypeAlias", "Literal", "LiteralString", "Callable"},
+        },
+    )
+    miter = (set(get_submodules(key)) for key in base)
+    modules = next(miter).union(*miter)
+
+    imports: Imports = {}
+    for module, importables in base.items():
+        for importable in importables:
+            imports[importable] = module
+    return (modules, imports)
+
+
+KNOWN_MODULES, KNOWN_IMPORTS = _KNOWN_IMPORTS
+
+
+@overload
+def astparse(obj: str | bytes) -> AST.Module: ...
+
+
+@overload
+def astparse(obj: None) -> None: ...
+
+
+@overload
+def astparse(obj: str | None) -> AST.Module | None: ...
+
+
+def astparse(obj: str | bytes | None):
+    if obj is not None:
+        return AST.parse(obj)  # pyright: ignore[reportUnknownMemberType]
+
+
+@cache
+@compose(astparse)
+def _get_import_stmt(name: ImportObject) -> str | None:
+    if name in KNOWN_IMPORTS:
+        return f"from {KNOWN_IMPORTS[name]} import {name}"
+
+    parts = name.split(".")
+    while parts:
+        mod = ModuleName(".".join(parts))
+        if mod in KNOWN_MODULES:
+            return f"import {mod}"
+        _ = parts.pop()
+
+    return None
+
+
+def get_import_stmt(name: ImportObject) -> Sequence[AST.stmt]:
+    tree = _get_import_stmt(name)
+    if tree is None:
+        return ()
+    return tree.body
+
+
+class _PyrightInteropt(BaseModel):
+    model_config: ClassVar[ConfigDict] = ConfigDict(
+        alias_generator=to_camel, populate_by_name=True
+    )
+
+
+class PyrightReport(_PyrightInteropt):
+    version: str
+    time: int
+    general_diagnostics: list[PyrightDiagnostic]
+    summary: PyrightReportSummary
+
+
+class PyrightReportSummary(_PyrightInteropt):
+    files_analyzed: int
+    error_count: int
+    warning_count: int
+    information_count: int
+    time_in_sec: TimeDelta
+
+
+class PyrightDiagnostic(_PyrightInteropt):
+    file: Path
+    severity: Literal["warning", "error"]
+    message: str
+    range: dict[str, dict[str, int]]
+    rule: str | None = None
+
+
+def get_pyright_report(module_path: Path) -> PyrightReport:
+    proc = subprocess.run(
+        [*PYRIGHT_COMMAND, module_path, "--outputjson"],
+        stdout=subprocess.PIPE,
+        check=False,
+    )
+    if proc.returncode != 1:
+        proc.check_returncode()
+    return PyrightReport.model_validate_json(proc.stdout)
+
+
+TYPINGS_DIR = Path("typings")
+app = App()
+
+
+def extract_string_literal(stmt: AST.stmt) -> str | None:
+    if (
+        isinstance(stmt, Expr)
+        and isinstance(stmt.value, Constant)
+        and isinstance(stmt.value.value, str)
+    ):
+        return stmt.value.value
+
+
+@app.default
+def main(
+    *modules: str, baseline: bool = True, force: bool = False, format: bool = True
+) -> int:
+    root = Path.cwd().resolve()
+    exit_code = 0
+    for module in modules:
+        print(f"INFO: Handling module {module}")
+        target = TYPINGS_DIR / module
+
+        # Old stub cleanup
+        if target.exists():
+            if not force:
+                print("ERROR: path 'target.as_posix()' already exists.")
+                print("       Rerun with `--force` to suppress this error.")
+                exit_code = 1
+                continue
+            elif target.is_dir():
+                rmtree(target)
+            else:
+                target.unlink()
+
+        # Stub generation
+        _ = subprocess.run([*PYRIGHT_COMMAND, "--createstub", module], check=True)
+        assert target.exists(), f"type stub directory should have been made at {target}"
+
+        # Identifying missing modules
+        missing_imports: dict[Path, set[ImportObject]] = defaultdict(set)
+        for diag in get_pyright_report(target).general_diagnostics:
+            if diag.rule != "reportUndefinedVariable":
+                continue
+            path = diag.file.relative_to(root)
+            val = re.match(r'"(\w+)"', diag.message)
+            assert val is not None
+            missing_imports[path].add(ImportObject(val.group(1)))
+
+        # Generated stub cleanup
+        stubs = tuple(
+            (stub, astparse(stub.read_bytes())) for stub in target.rglob("*.pyi")
+        )
+        for path, tree in stubs:
+            if not tree.body:
+                continue
+            expr = tree.body.pop(0)
+            contained_string = extract_string_literal(expr)
+            assert isinstance(contained_string, str) and "pyright" in contained_string, (
+                "First element in module should be a doc comment"
+            )
+
+            prepend: list[AST.stmt] = []
+            if tree.body and extract_string_literal(tree.body[0]) is not None:
+                prepend.append(tree.body.pop(0))
+            imports = chain(*(get_import_stmt(mod) for mod in missing_imports[path]))
+            body = [*chain(prepend, imports, tree.body)]
+            tree.body = body
+
+            n = path.write_text(AST.unparse(tree))
+            print(f"Wrote {n} bytes to {path}.")
+
+        _ = subprocess.run(
+            ["uvx", "ruff", "check", "--fix", target], check=False, capture_output=True
+        )
+
+        if format:
+            _ = subprocess.run(
+                ["uvx", "ruff", "format", target], check=True, capture_output=True
+            )
+            print("Formatted new stubs.")
+
+        if baseline:
+            output = subprocess.run(
+                [*PYRIGHT_COMMAND, "--writebaseline", target],
+                check=False,
+                capture_output=True,
+            )
+            if output.returncode:
+                print("ERROR: could not regenerate baseline")
+                print(output.stderr)
+                exit_code = output.returncode
+                continue
+            else:
+                print("Regenerated baseline file.")
+    return exit_code
+
+
+if __name__ == "__main__":
+    app()
