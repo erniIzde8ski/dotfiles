@@ -29,7 +29,7 @@ LOCAL_DIRECTORY = (
 TEMPLATE_DIRECTORIES = (EXTERNAL_DIRECTORY, LOCAL_DIRECTORY)
 
 
-GIT_URL = r"https://github.com/ernieIzde8ski/cc-templates.git"
+GIT_URL = r"https://github.com/erniIzde8ski/cc-templates.git"
 EPILOG = f"""
 Creates a new project in a subfolder of the current directory,
 using cookiecutter templates from this repository:

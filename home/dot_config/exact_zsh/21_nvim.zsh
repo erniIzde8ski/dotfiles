@@ -9,7 +9,7 @@ function dvim() (
     dvim_parent="${XDG_CONFIG_HOME}"
     dvim_caname='nvim-devel'
     dvim_target="${dvim_parent}/${dvim_osname}"
-    dvim_source='https://github.com/ernieIzde8ski/dotfiles.nvim'
+    dvim_source='https://github.com/erniIzde8ski/dotfiles.nvim'
 
     nvim_target="${XDG_CONFIG_HOME}/nvim"
 

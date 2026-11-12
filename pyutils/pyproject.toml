@@ -38,8 +38,8 @@ mkproject = "dotfiles_pyutils.mkproject:app"
 "confirm-action" = "dotfiles_pyutils.confirm_action:app"
 
 [project.urls]
-Homepage = "https://github.com/ernieIzde8ski/dotfiles/pyutils"
-Issues =  "https://github.com/ernieIzde8ski/dotfiles/issues"
+Homepage = "https://github.com/erniIzde8ski/dotfiles/pyutils"
+Issues =  "https://github.com/erniIzde8ski/dotfiles/issues"
 
 [tool.setuptools.dynamic]
 dependencies = { file = "requirements.txt" }

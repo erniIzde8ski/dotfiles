@@ -6,6 +6,8 @@
 
 {{ $name := promptStringOnce . "name" "Name" "Erni Izdebski" }}
 
+{{ $ghName := promptStringOnce . "ghName" "GitHub username" "erniIzde8ski" }}
+
 {{ $gitEmail := "44341687+erniIzde8ski@users.noreply.github.com" -}}
 {{ $gitEmail := promptStringOnce . "gitEmail" "Git email" $gitEmail }}
 
@@ -37,6 +39,7 @@ gpg:
 data:
   darkMode: {{ $darkMode }}
   encryptionPassphrase: {{ $passphrase }}
+  ghName: {{ $ghName }}
   gitEmail: {{ $gitEmail | quote }}
   gpgSigningKey: {{ if $gpgSigningKey -}}
     {{$gpgSigningKey | quote -}}
