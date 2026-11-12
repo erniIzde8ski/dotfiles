@@ -1,3 +1,3 @@
 # erniIzde8ski/dotfiles
 
-Linux dotfiles in chezmoi format. pre-commit requires python3.
+Linux dotfiles in chezmoi format. Uses `prek`.
