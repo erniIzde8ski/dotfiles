@@ -2,7 +2,7 @@
 [tool.ruff]
 line-length     = 90
 indent-width    = 4
-target-version  = "py312"
+target-version  = "py314"
 
 [tool.ruff.format]
 docstring-code-format = true
@@ -15,7 +15,7 @@ line_length = 90
 
 [tool.black]
 line-length = 90
-target-version = ["py312"]
+target-version = ["py314"]
 skip-magic-trailing-comma = true
 # not all python files are marked as such
 include = "dot_local/bin/executable_wg-random"
