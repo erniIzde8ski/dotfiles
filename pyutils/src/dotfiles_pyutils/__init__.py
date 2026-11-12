@@ -4,8 +4,8 @@
 # don't import anything in `__all__`.
 __all__ = ["__author__", "__copyright__", "__credits__", "__version__", "__maintainer__"]
 
-__author__ = "Ernest Izdebski"
-__copyright__ = "Copyright 2024-present, Ernest Izdebski"
-__credits__ = ["Ernest Izdebski"]
+__author__ = "Erni Izdebski"
+__copyright__ = "Copyright 2024-present, Erni Izdebski"
+__credits__ = ["Erni Izdebski"]
 __version__ = "0.2.1"
-__maintainer__ = "Ernest Izdebski"
+__maintainer__ = "Erni Izdebski"

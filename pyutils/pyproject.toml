@@ -21,7 +21,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "dotfiles.pyutils"
 authors = [
-    { name="Ernest Izdebski", email="44341687+ernieIzde8ski@users.noreply.github.com" }
+    { name="Erni Izdebski", email="44341687+erniIzde8ski@users.noreply.github.com" }
 ]
 description = "All of the commands that I don't want to write in POSIX shell."
 readme = { file = "README.md", content-type="text/markdown" }

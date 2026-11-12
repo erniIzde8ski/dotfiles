@@ -1,5 +1,5 @@
 default_context:
-    author_name:  "Ernie Serrano"
+    author_name:  {{ .name | quote }}
     author_email: {{ .gitEmail | quote }}
     github_username: "ernieIzde8ski"
     initial_version: "0.1.0"

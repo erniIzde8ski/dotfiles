@@ -1,5 +1,5 @@
 [user]
-    name       = Ernie Izdebski
+    name       = {{ .name | quote }}
     email      = {{ .gitEmail | quote }}
     {{- if .gpgSigningKey }}
     signingKey = {{ .gpgSigningKey | quote }}

@@ -4,7 +4,9 @@
 
 {{ $darkMode := or (not $isXServer) (promptBoolOnce . "darkMode" "Use dark mode" false) -}}
 
-{{ $gitEmail := "44341687+ernieIzde8ski@users.noreply.github.com" -}}
+{{ $name := promptStringOnce . "name" "Name" "Erni Izdebski" }}
+
+{{ $gitEmail := "44341687+erniIzde8ski@users.noreply.github.com" -}}
 {{ $gitEmail := promptStringOnce . "gitEmail" "Git email" $gitEmail }}
 
 {{ $gpgSigningKey := promptStringOnce . "gpgSigningKey" "GPG signing key" "" -}}
@@ -43,3 +45,4 @@ data:
   {{ end }}
   isWork: {{ $isWork }}
   isXServer: {{ $isXServer }}
+  name: {{ $name }}
