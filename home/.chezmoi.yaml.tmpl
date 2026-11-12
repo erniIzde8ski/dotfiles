@@ -28,6 +28,12 @@ add:
     templateSymlinks: true
 mode: "symlink"
 
+{{ if eq .chezmoi.os "windows" }}
+{{ $pwsh := lookPath "pwsh" }}
+cd:
+  command: {{ $pwsh }}
+{{ end }}
+
 edit:
     apply: true
 
@@ -49,3 +55,4 @@ data:
   isWork: {{ $isWork }}
   isXServer: {{ $isXServer }}
   name: {{ $name }}
+  username: {{ splitList "\\" .chezmoi.username | last }}

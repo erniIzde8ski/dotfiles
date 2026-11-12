@@ -1,20 +1,22 @@
+# {{ if ne .chezmoi.os "windows" }}
+
 ##### neovim dotfiles
 ".config/nvim":
   type: "git-repo"
   url: "https://github.com/ernieIzde8ski/dotfiles.nvim.git"
   refreshPeriod: "12h"
+
 ##### XBPS
-
-
-{{ $isVoid := and (eq .chezmoi.os "linux") (eq .chezmoi.osRelease.id "void") }}
-
-{{ if $isVoid }}
+# {{ $isVoid := and (eq .chezmoi.os "linux") (eq .chezmoi.osRelease.id "void") }}
+# {{ if $isVoid }}
 ".local/state/xbps-packages":
   type: "git-repo"
   url: "https://github.com/void-linux/void-packages"
   refreshPeriod: "12h"
-{{ end }}
+# {{ end }}
+
 ##### zsh plugins
+# {{ if lookPath "zsh" }}
 ".local/share/zsh_plugins/autoswitch_virtualenv.plugin.zsh":
   type: "file"
   url: "https://raw.githubusercontent.com/MichaelAquilina/zsh-autoswitch-virtualenv/master/autoswitch_virtualenv.plugin.zsh"
@@ -35,3 +37,6 @@
   type: "git-repo"
   url: "https://github.com/jeffreytse/zsh-vi-mode.git"
   refreshPeriod: "168h"
+# {{ end }}
+
+# {{ end }}

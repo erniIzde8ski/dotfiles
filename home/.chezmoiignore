@@ -29,47 +29,61 @@
 
 
 # --- xserver-dependent bindings
-{{ $isRoot := eq .chezmoi.uid "0" }}
+{{ $isWindows := eq .chezmoi.os "windows" }}
 
-{{ if and .isXServer (not $isRoot) }}
-    {{ if not (lookPath "Discord") }}
-        .config/discord/
-    {{ end }}
-
-    {{ if not (lookPath "konsole") }}
-        .local/share/konsole/
-    {{ end }}
-
-    {{ if not (lookPath "wezterm") }}
-        .config/wezterm/
-    {{ end }}
-
-    {{ if not (and (lookPath "pipewire-pulse") (lookPath "wireplumber")) }}
-        .config/pipewire/
-    {{ end }}
-
-    {{ if not (lookPath "hyx") }}
-        .local/share/applications/hyx.desktop
-    {{ end }}
-
-    {{ if not (stat "/opt/Pesterchum") }}
-        .local/share/applications/pesterchum.desktop
-    {{ end }}
-
-    {{ if not (stat "/mnt/indarys") }}
-        .local/share/applications/flashpoint.desktop
-    {{ end }}
+{{ if $isWindows }}
+    .config/
+    .local/
+    .local/
+    .zshenv
+    *.sh
 {{ else }}
-    # all stuff for local users
-    .config/autostart/
-    .config/discord/
-    .config/spectaclerc/
-    .config/pipewire/
-    .config/wezterm/
-    .local/share/applications/
-    .local/share/konsole/
-    .local/share/xsession
-    .ssh/config
-    .ssh/id_*
-    .xinitrc
+    *.bat
+    *.ps1
+    {{ $isRoot := eq .chezmoi.uid "0" }}
+    {{ $noDisplay := not .isXServer }}
+    {{ if or $isRoot $noDisplay }}
+        # all stuff for local users
+        .config/autostart/
+        .config/discord/
+        .config/spectaclerc/
+        .config/pipewire/
+        .config/wezterm/
+        .local/share/applications/
+        .local/share/konsole/
+        .local/share/xsession
+        .ssh/config
+        .ssh/id_*
+        .xinitrc
+    {{ else }}
+        {{ if not (lookPath "Discord") }}
+            .config/discord/
+        {{ end }}
+
+        {{ if not (lookPath "konsole") }}
+            .local/share/konsole/
+        {{ end }}
+
+        {{ if not (lookPath "wezterm") }}
+            .config/wezterm/
+        {{ end }}
+
+        {{ if not (and (lookPath "pipewire-pulse") (lookPath "wireplumber")) }}
+            .config/pipewire/
+        {{ end }}
+
+        {{ if not (lookPath "hyx") }}
+            .local/share/applications/hyx.desktop
+        {{ end }}
+
+        {{ if not (stat "/opt/Pesterchum") }}
+            .local/share/applications/pesterchum.desktop
+        {{ end }}
+
+        {{ if not (stat "/mnt/indarys") }}
+            .local/share/applications/flashpoint.desktop
+        {{ end }}
+    {{ end }}
 {{ end }}
+
+
